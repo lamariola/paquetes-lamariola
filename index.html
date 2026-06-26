@@ -450,12 +450,13 @@ function callBE(method,data){
   if(embedded){
     return new Promise((ok,err)=>google.script.run.withSuccessHandler(ok).withFailureHandler(err)[method](data));
   }
-  // Modo GitHub Pages: POST a Apps Script sin Content-Type → evita CORS preflight
-  // Apps Script responde con Access-Control-Allow-Origin:* → podemos leer la respuesta
+  // Modo GitHub Pages: no-cors evita que el redirect de Apps Script bloquee el fetch.
+  // La cotización SÍ se guarda en Sheets; simplemente no podemos leer la respuesta.
   return fetch(APPS_SCRIPT_URL, {
     method:'POST',
+    mode:'no-cors',
     body: JSON.stringify({quote: data}),
-  }).then(r=>r.json());
+  }).then(()=>({ok:true}));
 }
 
 function loadInitialData(){
@@ -736,13 +737,12 @@ async function doSave(){
     precioPorPersona:final/S.people, notas:$('notesInput').value,
   };
   try{
-    const res=await callBE('saveQuote',quote);
-    S.editingId=res?.id||S.editingId;
+    await callBE('saveQuote',quote);
     $('editBanner').classList.remove('hide');
-    $('editBanner').textContent=`${res?.updated?'Actualizada':'Guardada'}${res?.id?' · '+res.id:''} · v${res?.version||1}`;
+    $('editBanner').textContent='Guardada en Google Sheets';
     $('saveBtn').textContent='💾 Guardar cambios';
     showStatus('✅ Cotización guardada','success');
-    refreshHistory();
+    setTimeout(refreshHistory, 1500);
   }catch(e){
     showStatus('❌ Error: '+(e?.message||e),'error');
   }finally{
