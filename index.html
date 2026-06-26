@@ -352,7 +352,7 @@
 // ═══════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN — para hosting externo, poner la URL del Web App aquí
 // ═══════════════════════════════════════════════════════════════════
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhR4Q542ADf6CJ_1Y4IRS-fwxRFaYMZG3jQYbk_GQa1bZkxQ_Dt5R6cQWAmqP9CZuI/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3i08xY6P-dOFsBF4IJ-HXmTZYt1JpYyvU5ovcJNoAYSkJldGWCVbG1FDsI-wftHVt/exec';
 
 // ═══════════════════════════════════════════════════════════════════
 // CATÁLOGO DE COSTOS (costos exactos de la matriz 2026)
@@ -450,22 +450,27 @@ function callBE(method,data){
   if(embedded){
     return new Promise((ok,err)=>google.script.run.withSuccessHandler(ok).withFailureHandler(err)[method](data));
   }
-  // Para GitHub Pages: POST sin Content-Type para evitar CORS preflight.
-  // Apps Script recibe los datos vía e.postData.contents.
-  // Respuesta es opaca (no-cors) pero la cotización se guarda en Sheets.
-  return fetch(APPS_SCRIPT_URL+'?action='+method,{
+  // Modo GitHub Pages: POST a Apps Script sin Content-Type → evita CORS preflight
+  // Apps Script responde con Access-Control-Allow-Origin:* → podemos leer la respuesta
+  return fetch(APPS_SCRIPT_URL, {
     method:'POST',
-    body:JSON.stringify({action:'save', quote:data}),
-    mode:'no-cors',
-  }).then(()=>({ok:true, id:'COT-'+Date.now()}));
+    body: JSON.stringify({quote: data}),
+  }).then(r=>r.json());
 }
 
 function loadInitialData(){
   if(!embedded){
-    $('loader').classList.add('hide');
-    $('homeStatus').textContent='';
-    $('btnNew').disabled=false;
-    $('btnHist').disabled=false;
+    // Cargar historial desde Google Sheets vía API REST
+    fetch(APPS_SCRIPT_URL+'?action=history')
+      .then(r=>r.json())
+      .then(data=>{ S.history=mapHistory(data.historial||[]); })
+      .catch(()=>{ S.history=[]; })
+      .finally(()=>{
+        $('loader').classList.add('hide');
+        $('homeStatus').textContent='';
+        $('btnNew').disabled=false;
+        $('btnHist').disabled=false;
+      });
     return;
   }
   google.script.run
@@ -490,7 +495,13 @@ function loadInitialData(){
 }
 
 function refreshHistory(){
-  if(!embedded) return;
+  if(!embedded){
+    fetch(APPS_SCRIPT_URL+'?action=history')
+      .then(r=>r.json())
+      .then(data=>{ S.history=mapHistory(data.historial||[]); renderHist && renderHist(); })
+      .catch(()=>{});
+    return;
+  }
   google.script.run
     .withSuccessHandler(data=>{ S.history=mapHistory(data.historial||[]); })
     .withFailureHandler(()=>{})
