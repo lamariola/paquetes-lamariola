@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Paquetes La Mariola</title>
+  <style>
+    :root {
+      --forest:#173f28; --leaf:#2f7a3a; --cream:#fff7e6; --paper:#f5edd8;
+      --line:#dccca8; --ink:#1f2d22; --muted:#63705d; --gold:#d9902e;
+      --safe-top:env(safe-area-inset-top,0); --safe-bottom:env(safe-area-inset-bottom,0);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{font-family:system-ui,-apple-system,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+
+    /* SCREENS */
+    .screen{display:none;min-height:100vh;flex-direction:column;}
+    .screen.active{display:flex;}
+
+    /* HEADER */
+    .app-header{background:linear-gradient(135deg,var(--forest),#0f2e1d);color:var(--cream);padding:20px 16px 0;}
+    .app-header h1{font-size:22px;font-weight:900;padding-top:var(--safe-top);}
+    .app-header p{font-size:13px;color:#eadbb7;margin-top:4px;padding-bottom:14px;}
+
+    /* PROGRESS */
+    .progress-bar{background:rgba(0,0,0,0.2);padding:10px 16px;display:flex;gap:8px;align-items:center;}
+    .ps{height:4px;flex:1;border-radius:2px;background:rgba(255,255,255,0.25);transition:background .3s;}
+    .ps.done{background:var(--gold);}
+    .ps.active{background:#fff;}
+    .ps-label{color:#eadbb7;font-size:12px;font-weight:700;min-width:56px;text-align:right;}
+
+    /* CONTENT */
+    .screen-content{flex:1;overflow-y:auto;padding:16px;padding-bottom:120px;}
+
+    /* CARDS */
+    .card{background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;}
+    .card-title{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:block;}
+
+    /* PACKAGE GRID */
+    .pkg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .pkg-card{background:#fffdf6;border:2px solid var(--line);border-radius:14px;padding:14px;text-align:left;cursor:pointer;transition:all .2s;min-height:88px;display:flex;flex-direction:column;gap:6px;width:100%;}
+    .pkg-card.sel{border-color:var(--leaf);background:#eef8f0;}
+    .pkg-card strong{font-size:15px;color:var(--forest);line-height:1.2;}
+    .pkg-card span{font-size:12px;color:var(--muted);}
+    .pkg-card.full{grid-column:1/-1;}
+
+    /* PEOPLE */
+    .people-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+    .ppl-btn{min-height:64px;border:2px solid var(--line);border-radius:12px;background:#fffdf6;font-size:20px;font-weight:900;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;transition:all .2s;}
+    .ppl-btn small{font-size:10px;font-weight:700;}
+    .ppl-btn.sel{border-color:var(--leaf);background:#eef8f0;color:var(--forest);}
+
+    /* FORM */
+    .form-input{width:100%;min-height:52px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fffdf6;font-size:16px;color:var(--ink);font-family:inherit;}
+    .form-input:focus{outline:none;border-color:var(--leaf);}
+    .form-label{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;display:block;}
+
+    /* ACCOMMODATION */
+    .accom-btn{width:100%;min-height:52px;padding:12px 16px;border:2px solid var(--line);border-radius:12px;background:#fffdf6;font-size:15px;color:var(--ink);font-family:inherit;cursor:pointer;margin-bottom:8px;text-align:left;transition:all .2s;}
+    .accom-btn.sel{border-color:var(--leaf);background:#eef8f0;}
+    .accom-btn:last-child{margin-bottom:0;}
+
+    /* COMPONENT CARDS */
+    .comp-card{background:#fffdf6;border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;transition:opacity .2s,background .2s;}
+    .comp-card.off{opacity:.5;background:#ede9de;}
+    .comp-row{display:flex;align-items:center;gap:12px;}
+    .comp-name{flex:1;font-size:16px;font-weight:700;color:var(--forest);line-height:1.3;}
+    .comp-price{font-size:15px;font-weight:900;color:var(--forest);white-space:nowrap;}
+
+    /* TOGGLE */
+    .toggle{width:52px;height:30px;background:#bbb;border-radius:15px;position:relative;cursor:pointer;transition:background .2s;border:none;flex-shrink:0;}
+    .toggle.on{background:var(--leaf);}
+    .toggle::after{content:'';width:24px;height:24px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.25);}
+    .toggle.on::after{left:25px;}
+
+    /* QTY */
+    .qty-row{display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+    .qty-label{font-size:12px;color:var(--muted);font-weight:700;flex:1;}
+    .qty-btn{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:22px;color:var(--forest);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;line-height:1;}
+    .qty-val{font-size:18px;font-weight:900;color:var(--forest);min-width:32px;text-align:center;}
+
+    /* ADD COMPONENT */
+    .add-btn{width:100%;min-height:52px;border:2px dashed var(--line);border-radius:14px;background:transparent;color:var(--muted);font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+    .add-list{display:none;background:rgba(255,255,255,.95);border:1.5px solid var(--line);border-radius:14px;margin-top:8px;overflow:hidden;}
+    .add-list.open{display:block;}
+    .add-item{width:100%;padding:14px 16px;border:none;border-bottom:1px solid var(--line);background:transparent;text-align:left;font-size:15px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:space-between;font-family:inherit;}
+    .add-item:last-child{border-bottom:none;}
+    .add-item:active{background:#eef8f0;}
+    .add-item small{color:var(--muted);font-size:13px;}
+
+    /* STICKY PRICE */
+    .sticky{position:fixed;bottom:0;left:0;right:0;background:var(--forest);color:var(--cream);padding:10px 16px;padding-bottom:calc(10px + var(--safe-bottom));display:flex;align-items:center;justify-content:space-between;box-shadow:0 -3px 16px rgba(0,0,0,.2);z-index:100;}
+    .sticky-left small{font-size:11px;font-weight:700;opacity:.75;}
+    .sticky-left span{display:block;font-size:12px;opacity:.65;margin-top:2px;}
+    .sticky-right{font-size:26px;font-weight:900;}
+
+    /* PRICE HERO */
+    .price-hero{background:var(--forest);color:var(--cream);border-radius:20px;padding:24px;text-align:center;margin-bottom:12px;}
+    .ph-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;opacity:.8;}
+    .ph-val{font-size:52px;font-weight:900;margin:6px 0;}
+    .ph-pp{font-size:15px;opacity:.75;}
+
+    /* PRICE EDIT */
+    .price-edit-input{width:100%;min-height:60px;padding:12px;border:2px solid var(--leaf);border-radius:12px;background:#fffdf6;font-size:26px;font-weight:900;color:var(--forest);text-align:center;font-family:inherit;}
+    .pp-display{text-align:center;margin-top:8px;font-size:14px;color:var(--muted);}
+    .pp-display strong{color:var(--forest);}
+
+    /* DETAILS */
+    .details-block{background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+    .details-toggle{width:100%;padding:14px 16px;background:transparent;border:none;text-align:left;font-size:14px;font-weight:800;color:var(--forest);cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-family:inherit;}
+    .details-body{padding:0 16px 14px;display:none;}
+    .details-body.open{display:block;}
+    .d-row{display:flex;justify-content:space-between;font-size:14px;padding:7px 0;border-bottom:1px solid var(--line);}
+    .d-row:last-child{border-bottom:none;font-weight:800;}
+    .int-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+
+    /* WA */
+    .wa-area{width:100%;min-height:180px;padding:14px;border:1.5px solid var(--line);border-radius:12px;background:#fffdf6;font-size:14px;line-height:1.55;color:var(--ink);font-family:inherit;resize:none;}
+
+    /* HISTORY */
+    .hist-card{background:#fffdf6;border:1.5px solid var(--line);border-radius:16px;padding:16px;margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:background .15s;}
+    .hist-card:active{background:#eef8f0;}
+    .hist-info{flex:1;}
+    .hist-ref{font-size:17px;font-weight:800;color:var(--forest);}
+    .hist-meta{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.4;}
+    .hist-price{font-size:20px;font-weight:900;color:var(--forest);}
+    .hist-arr{color:var(--muted);font-size:22px;}
+
+    /* BOTTOM ACTIONS */
+    .bottom-actions{position:fixed;bottom:0;left:0;right:0;padding:10px 16px;padding-bottom:calc(10px + var(--safe-bottom));background:var(--paper);border-top:1px solid var(--line);display:flex;gap:8px;z-index:100;}
+    .bottom-actions.above-sticky{padding-bottom:calc(10px + var(--safe-bottom) + 56px);}
+
+    /* BUTTONS */
+    .btn{min-height:52px;border-radius:14px;border:none;font-size:16px;font-weight:800;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s,transform .1s;font-family:inherit;}
+    .btn:active{transform:scale(.97);}
+    .btn:disabled{opacity:.5;cursor:wait;}
+    .btn-primary{background:var(--forest);color:var(--cream);}
+    .btn-secondary{background:var(--line);color:#4c3516;}
+    .btn-green{background:#25d366;color:#fff;}
+    .btn-back{background:rgba(255,255,255,.85);border:1.5px solid var(--line);color:var(--muted);flex:0 0 auto;padding:0 14px;}
+
+    /* HOME */
+    .home-content{flex:1;padding:20px 16px;display:flex;flex-direction:column;gap:14px;}
+    .home-btn{min-height:120px;border-radius:20px;border:none;padding:22px 20px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:10px;transition:transform .1s;width:100%;font-family:inherit;}
+    .home-btn:active{transform:scale(.98);}
+    .home-btn:disabled{opacity:.55;}
+    .home-btn-p{background:var(--forest);color:var(--cream);}
+    .home-btn-s{background:rgba(255,255,255,.85);border:1.5px solid var(--line);}
+    .hb-title{font-size:22px;font-weight:900;}
+    .hb-desc{font-size:14px;opacity:.8;line-height:1.3;}
+
+    /* STATUS */
+    .status-msg{padding:12px 14px;border-radius:12px;font-size:14px;font-weight:700;margin-bottom:12px;}
+    .s-success{background:#e8f5e9;color:#1b5e20;}
+    .s-error{background:#fce4ec;color:#880e4f;}
+
+    /* EDIT BANNER */
+    .edit-banner{background:#fff3cd;border:1px solid #ffc107;border-radius:12px;padding:10px 14px;font-size:13px;font-weight:700;color:#856404;margin-bottom:12px;}
+
+    /* SEARCH */
+    .search-wrap{position:sticky;top:0;background:var(--paper);padding:10px 0 6px;z-index:10;}
+
+    /* LOADING */
+    .loader{position:fixed;inset:0;background:rgba(23,63,40,.88);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;color:var(--cream);z-index:999;}
+    .loader.hide{display:none;}
+    .spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    .hide{display:none!important;}
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loader" id="loader"><div class="spinner"></div><div>Cargando...</div></div>
+
+<!-- ═══ SCREEN: HOME ═══════════════════════════════════════════════ -->
+<div class="screen active" id="sHome">
+  <div class="app-header">
+    <h1>🌿 Paquetes La Mariola</h1>
+    <p>Herramienta de cotización 2026</p>
+  </div>
+  <div class="home-content">
+    <div id="homeStatus" style="font-size:14px;color:var(--muted);"></div>
+    <button class="home-btn home-btn-p" id="btnNew" onclick="startNew()" disabled>
+      <span class="hb-title">📋 Nueva cotización</span>
+      <span class="hb-desc">Ajustar paquete, calcular precio y generar texto para WhatsApp</span>
+    </button>
+    <button class="home-btn home-btn-s" id="btnHist" onclick="goHistory()" disabled>
+      <span class="hb-title" style="color:var(--forest)">🗂 Cotizaciones guardadas</span>
+      <span class="hb-desc" style="color:var(--muted)">Buscar y reabrir cotizaciones de Saúl y Tere</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: PASO 1 ════════════════════════════════════════════ -->
+<div class="screen" id="sStep1">
+  <div class="app-header">
+    <h1>🌿 Paquetes La Mariola</h1>
+    <div class="progress-bar">
+      <div class="ps active"></div><div class="ps"></div><div class="ps"></div>
+      <span class="ps-label">Paso 1/3</span>
+    </div>
+  </div>
+  <div class="screen-content">
+
+    <div class="card">
+      <span class="card-title">Nombre / referencia</span>
+      <input class="form-input" id="refInput" placeholder="Nombre del cliente o grupo..." type="text" autocomplete="off">
+    </div>
+
+    <div class="card">
+      <span class="card-title">¿Para cuántas personas?</span>
+      <div class="people-row">
+        <button class="ppl-btn" onclick="setPeople(1)"><span>1</span><small>persona</small></button>
+        <button class="ppl-btn sel" onclick="setPeople(2)"><span>2</span><small>personas</small></button>
+        <button class="ppl-btn" onclick="setPeople(3)"><span>3</span><small>personas</small></button>
+        <button class="ppl-btn" onclick="setPeople(4)"><span>4</span><small>personas</small></button>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="card-title">Paquete base</span>
+      <div class="pkg-grid" id="pkgGrid"></div>
+    </div>
+
+    <div class="card hide" id="accomCard">
+      <span class="card-title">Configuración de alojamiento</span>
+      <div id="accomOpts"></div>
+    </div>
+
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-back" onclick="goHome()">← Inicio</button>
+    <button class="btn btn-primary" onclick="goStep2()">Continuar →</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: PASO 2 ════════════════════════════════════════════ -->
+<div class="screen" id="sStep2">
+  <div class="app-header">
+    <h1 id="s2title">Componentes</h1>
+    <div class="progress-bar">
+      <div class="ps done"></div><div class="ps active"></div><div class="ps"></div>
+      <span class="ps-label">Paso 2/3</span>
+    </div>
+  </div>
+  <div class="screen-content">
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+      Activá o desactivá cada componente. Ajustá la cantidad si algo cambia parcialmente.
+    </p>
+    <div id="compList"></div>
+    <button class="add-btn" onclick="toggleAddList()">＋ Agregar componente</button>
+    <div class="add-list" id="addList"></div>
+  </div>
+  <div class="sticky" id="stickyBar">
+    <div class="sticky-left">
+      <small>Precio sugerido</small>
+      <span id="stickyPP">— por persona</span>
+    </div>
+    <div class="sticky-right" id="stickyVal">US$0</div>
+  </div>
+  <div class="bottom-actions above-sticky">
+    <button class="btn btn-back" onclick="goStep1()">← Atrás</button>
+    <button class="btn btn-primary" onclick="goStep3()">Ver precio →</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: PASO 3 ════════════════════════════════════════════ -->
+<div class="screen" id="sStep3">
+  <div class="app-header">
+    <h1>Precio y cotización</h1>
+    <div class="progress-bar">
+      <div class="ps done"></div><div class="ps done"></div><div class="ps active"></div>
+      <span class="ps-label">Paso 3/3</span>
+    </div>
+  </div>
+  <div class="screen-content">
+    <div id="editBanner" class="edit-banner hide"></div>
+    <div id="statusMsg" class="hide"></div>
+
+    <div class="price-hero">
+      <div class="ph-label">Precio sugerido</div>
+      <div class="ph-val" id="phVal">US$0</div>
+      <div class="ph-pp" id="phPP">— por persona</div>
+    </div>
+
+    <div class="card">
+      <label class="form-label">Precio final (editable)</label>
+      <input class="price-edit-input" id="finalPriceInput" type="number" min="0" step="1" oninput="onFinalChange()">
+      <div class="pp-display">Precio por persona: <strong id="finalPP">—</strong></div>
+    </div>
+
+    <div class="details-block">
+      <button class="details-toggle" onclick="toggleDetails()">
+        Ver detalle interno del cálculo <span id="detArrow">▶</span>
+      </button>
+      <div class="details-body" id="detBody">
+        <div class="int-grid">
+          <div>
+            <label class="form-label">Contingencia %</label>
+            <input class="form-input" id="contInput" type="number" min="0" max="50" step="1" value="5" style="min-height:44px;font-size:16px;" oninput="recalc()">
+          </div>
+          <div>
+            <label class="form-label">Margen %</label>
+            <input class="form-input" id="marginInput" type="number" min="0" max="90" step="1" value="30" style="min-height:44px;font-size:16px;" oninput="recalc()">
+          </div>
+        </div>
+        <div class="d-row"><span>Costo real</span><strong id="dCosto">—</strong></div>
+        <div class="d-row"><span>Contingencia</span><strong id="dCont">—</strong></div>
+        <div class="d-row"><span>Costo + contingencia</span><strong id="dCostoCont">—</strong></div>
+        <div class="d-row"><span>Precio sugerido (con margen)</span><strong id="dSugerido">—</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="form-label">Notas internas</label>
+      <textarea class="form-input" id="notesInput" rows="4"
+        placeholder="Cambios solicitados, descuentos, actividades sustituidas..."></textarea>
+    </div>
+
+    <div class="card">
+      <label class="form-label">Texto para WhatsApp Business</label>
+      <textarea class="wa-area" id="waText" readonly></textarea>
+    </div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-back" onclick="goStep2()">← Ajustar</button>
+    <button class="btn btn-green" onclick="copyWA()">📋 Copiar WA</button>
+    <button class="btn btn-primary" id="saveBtn" onclick="doSave()">💾 Guardar</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: HISTORIAL ═════════════════════════════════════════ -->
+<div class="screen" id="sHistory">
+  <div class="app-header">
+    <h1>🗂 Cotizaciones guardadas</h1>
+    <p>Historial compartido Saúl y Tere</p>
+  </div>
+  <div class="screen-content">
+    <div class="search-wrap">
+      <input class="form-input" id="histSearch" placeholder="Buscar por nombre..." oninput="renderHist()" autocomplete="off">
+    </div>
+    <div id="histList"></div>
+  </div>
+  <div class="bottom-actions">
+    <button class="btn btn-back" style="flex:1" onclick="goHome()">← Inicio</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// CONFIGURACIÓN — para hosting externo, poner la URL del Web App aquí
+// ═══════════════════════════════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhR4Q542ADf6CJ_1Y4IRS-fwxRFaYMZG3jQYbk_GQa1bZkxQ_Dt5R6cQWAmqP9CZuI/exec';
+
+// ═══════════════════════════════════════════════════════════════════
+// CATÁLOGO DE COSTOS (costos exactos de la matriz 2026)
+// ═══════════════════════════════════════════════════════════════════
+const CATALOG = [
+  {id:'ALOJ-01',nombre:'Cabaña con una cama',     costos:[43.0817,43.2757,67.7550,68.0490]},
+  {id:'ALOJ-02',nombre:'Cabaña con dos camas',    costos:[0,44.9523,45.1463,0]},
+  {id:'ALOJ-03',nombre:'Dos cabañas',             costos:[0,67.6611,67.7550,68.0490]},
+  {id:'ALI-01', nombre:'Desayuno',                costos:[5.3793,10.7586,16.1379,21.5172]},
+  {id:'ALI-02', nombre:'Almuerzo',                costos:[6.9241,13.8483,20.7724,27.6966]},
+  {id:'ALI-03', nombre:'Cena',                    costos:[6.9241,13.8483,20.7724,27.6966]},
+  {id:'ACT-01', nombre:'Caminata nocturna',       costos:[22.7638,22.7638,22.7638,22.7638]},
+  {id:'ACT-02', nombre:'Observación de aves en La Mariola', costos:[26.9017,26.9017,26.9017,26.9017]},
+  {id:'ACT-03', nombre:'Tour en canoa río Santa Cruz', costos:[25.8276,25.8276,51.6552,51.6552]},
+  {id:'ACT-04', nombre:'Tour bote motor río Santa Cruz/Pocosol', costos:[61.2729,61.2729,71.2729,71.2729]},
+  {id:'ACT-05', nombre:'Tour nocturno de caimanes', costos:[56.2729,56.2729,56.2729,56.2729]},
+  {id:'ACT-06', nombre:'Charla agroecológica (chocolate y abejas)', costos:[22.3845,24.3845,26.3845,28.3845]},
+  {id:'EXT-01', nombre:'Gira de un día a Indio-Maíz', costos:[131.2729,161.2729,151.2729,201.2729]},
+  {id:'EXT-02', nombre:'Una noche en Indio-Maíz', costos:[211.2729,246.2729,291.2729,316.2729]},
+];
+
+const LODGING = ['ALOJ-01','ALOJ-02','ALOJ-03'];
+const AUTO_IDS = ['TRA-01','TRA-02','EQU-01'];
+
+const PACKAGES = [
+  {id:'CON_2',nombre:'Explorando Indio-Maíz',              noches:2},
+  {id:'CON_3',nombre:'Río San Juan esencial',              noches:3},
+  {id:'CON_4',nombre:'En busca de las aves de Río San Juan',noches:4},
+  {id:'CON_5',nombre:'Finca viva y biodiversidad',          noches:5},
+  {id:'PERSONALIZADO',nombre:'Paquete personalizado',       noches:0},
+];
+
+const PKG_ITEMS = {
+  CON_2:[['ALOJ-01',2],['ALI-03',2],['ALI-01',2],['ACT-01',1],['EXT-01',1]],
+  CON_3:[['ALOJ-01',3],['ALI-03',3],['ALI-01',3],['ACT-01',1],['ACT-02',1],['EXT-01',1]],
+  CON_4:[['ALOJ-01',4],['ALI-03',3],['ALI-01',3],['ALI-02',1],['EXT-02',1],['ACT-03',1],['ACT-05',1]],
+  CON_5:[['ALOJ-01',5],['ALI-03',4],['ALI-01',4],['ALI-02',2],['EXT-02',1],['ACT-02',1],['ACT-06',1],['ACT-03',1]],
+  PERSONALIZADO:[],
+};
+
+const COMMERCIAL = {
+  'ALOJ-01': q=>`${q} ${q===1?'noche':'noches'} en cabaña con una cama`,
+  'ALOJ-02': q=>`${q} ${q===1?'noche':'noches'} en cabaña con dos camas`,
+  'ALOJ-03': q=>`${q} ${q===1?'noche':'noches'} en dos cabañas`,
+  'ALI-01':  q=>`${q} ${q===1?'desayuno':'desayunos'}`,
+  'ALI-02':  q=>`${q} ${q===1?'almuerzo':'almuerzos'}`,
+  'ALI-03':  q=>`${q} ${q===1?'cena':'cenas'}`,
+  'ACT-01':  ()=>'Caminata nocturna en la finca',
+  'ACT-02':  ()=>'Observación de aves en La Mariola',
+  'ACT-03':  ()=>'Tour en canoa por río Santa Cruz',
+  'ACT-04':  ()=>'Tour en bote motor',
+  'ACT-05':  ()=>'Tour nocturno de caimanes',
+  'ACT-06':  ()=>'Charla agroecológica',
+  'EXT-01':  ()=>'Gira de un día a Indio-Maíz con almuerzo incluido',
+  'EXT-02':  ()=>'Una noche en Indio-Maíz (1 almuerzo, 1 cena y 1 desayuno incluidos)',
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// ESTADO DE LA APP
+// ═══════════════════════════════════════════════════════════════════
+const S = {
+  people:2, pkgId:'CON_3', accomId:'ALOJ-01',
+  items:[], finalPrice:0, editingId:null, history:[],
+  cont:5, margin:30,
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════════════════════════════════
+const $  = id => document.getElementById(id);
+const money = n => 'US$' + Math.round(n).toLocaleString('en-US');
+const cat = id => CATALOG.find(c => c.id === id);
+const isLodging = id => LODGING.includes(id);
+const esc = v => String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[c]);
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showStatus(msg,type){
+  const el=$('statusMsg');
+  el.className='status-msg s-'+type;
+  el.textContent=msg;
+  el.classList.remove('hide');
+  setTimeout(()=>el.classList.add('hide'),4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BACKEND (Apps Script nativo O fetch externo)
+// ═══════════════════════════════════════════════════════════════════
+const embedded = typeof google!=='undefined' && google.script;
+
+function callBE(method,data){
+  if(embedded){
+    return new Promise((ok,err)=>google.script.run.withSuccessHandler(ok).withFailureHandler(err)[method](data));
+  }
+  // Para GitHub Pages: POST sin Content-Type para evitar CORS preflight.
+  // Apps Script recibe los datos vía e.postData.contents.
+  // Respuesta es opaca (no-cors) pero la cotización se guarda en Sheets.
+  return fetch(APPS_SCRIPT_URL+'?action='+method,{
+    method:'POST',
+    body:JSON.stringify({action:'save', quote:data}),
+    mode:'no-cors',
+  }).then(()=>({ok:true, id:'COT-'+Date.now()}));
+}
+
+function loadInitialData(){
+  if(!embedded){
+    $('loader').classList.add('hide');
+    $('homeStatus').textContent='';
+    $('btnNew').disabled=false;
+    $('btnHist').disabled=false;
+    return;
+  }
+  google.script.run
+    .withSuccessHandler(data=>{
+      S.history = mapHistory(data.historial||[]);
+      // update config from sheet
+      const cfg = Object.fromEntries((data.config||[]).map(r=>[String(r.Campo),r.Valor]));
+      if(cfg.Contingencia_default) S.cont = parseFloat(cfg.Contingencia_default)||5;
+      if(cfg.Margen_default) S.margin = parseFloat(cfg.Margen_default)||30;
+      $('loader').classList.add('hide');
+      $('homeStatus').textContent='';
+      $('btnNew').disabled=false;
+      $('btnHist').disabled=false;
+    })
+    .withFailureHandler(err=>{
+      $('loader').classList.add('hide');
+      $('homeStatus').textContent='Error al cargar datos: '+(err.message||err);
+      $('btnNew').disabled=false;
+      $('btnHist').disabled=false;
+    })
+    .getInitialData();
+}
+
+function refreshHistory(){
+  if(!embedded) return;
+  google.script.run
+    .withSuccessHandler(data=>{ S.history=mapHistory(data.historial||[]); })
+    .withFailureHandler(()=>{})
+    .getInitialData();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', ()=>{
+  renderPkgGrid();
+  $('contInput').value = S.cont;
+  $('marginInput').value = S.margin;
+  loadInitialData();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════════════════
+function goHome(){ show('sHome'); }
+
+function startNew(){
+  S.editingId=null; S.people=2; S.pkgId='CON_3'; S.accomId='ALOJ-01'; S.items=[];
+  $('refInput').value=''; $('notesInput').value='';
+  $('saveBtn').textContent='💾 Guardar';
+  $('editBanner').classList.add('hide');
+  $('contInput').value=S.cont; $('marginInput').value=S.margin;
+  renderPkgGrid(); updatePeopleUI(); updateAccomUI();
+  show('sStep1');
+}
+
+function goHistory(){ renderHist(); show('sHistory'); }
+
+// ═══════════════════════════════════════════════════════════════════
+// PASO 1
+// ═══════════════════════════════════════════════════════════════════
+function setPeople(n){
+  S.people=n;
+  updatePeopleUI();
+  updateAccomUI();
+}
+function updatePeopleUI(){
+  document.querySelectorAll('.ppl-btn').forEach((b,i)=>b.classList.toggle('sel',i+1===S.people));
+}
+function renderPkgGrid(){
+  $('pkgGrid').innerHTML=PACKAGES.map(p=>`
+    <button class="pkg-card${p.id===S.pkgId?' sel':''}${p.id==='PERSONALIZADO'?' full':''}"
+      onclick="selectPkg('${p.id}')">
+      <strong>${p.nombre}</strong>
+      <span>${p.noches?p.noches+' noches':'Armá tu paquete'}</span>
+    </button>`).join('');
+}
+function selectPkg(id){ S.pkgId=id; renderPkgGrid(); updateAccomUI(); }
+
+function accomOpts(n){
+  return({
+    1:[['ALOJ-01','Cabaña con una cama']],
+    2:[['ALOJ-01','Cabaña con una cama'],['ALOJ-02','Cabaña con dos camas (sujeta a disponibilidad)'],['ALOJ-03','Dos cabañas']],
+    3:[['ALOJ-02','Cabaña con dos camas (sujeta a disponibilidad)'],['ALOJ-03','Dos cabañas']],
+    4:[['ALOJ-03','Dos cabañas']],
+  })[n]||[];
+}
+function updateAccomUI(){
+  const opts=accomOpts(S.people);
+  if(!opts.some(([id])=>id===S.accomId)) S.accomId=opts[0]?.[0]||'ALOJ-01';
+  if(opts.length<=1){ $('accomCard').classList.add('hide'); if(opts[0]) S.accomId=opts[0][0]; return; }
+  $('accomCard').classList.remove('hide');
+  $('accomOpts').innerHTML=opts.map(([id,label])=>`
+    <button class="accom-btn${id===S.accomId?' sel':''}" onclick="selectAccom('${id}')">${label}</button>`).join('');
+}
+function selectAccom(id){ S.accomId=id; updateAccomUI(); }
+
+function goStep1(){ show('sStep1'); }
+function goStep2(){
+  const baseItems=(PKG_ITEMS[S.pkgId]||[]).map(([id,qty])=>({
+    id:id==='ALOJ-01'?S.accomId:id, qty, on:true,
+  }));
+  if(S.pkgId==='PERSONALIZADO'&&!baseItems.length)
+    baseItems.push({id:S.accomId,qty:1,on:true});
+  S.items=baseItems;
+  const pkg=PACKAGES.find(p=>p.id===S.pkgId);
+  $('s2title').textContent=pkg?pkg.nombre:'Componentes';
+  renderComps(); recalcSticky();
+  show('sStep2');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PASO 2
+// ═══════════════════════════════════════════════════════════════════
+function renderComps(){
+  $('compList').innerHTML=S.items.map((it,i)=>{
+    const c=cat(it.id);
+    const cost=c?c.costos[S.people-1]*it.qty:0;
+    return `<div class="comp-card${it.on?'':' off'}">
+      <div class="comp-row">
+        <button class="toggle${it.on?' on':''}" onclick="toggleComp(${i})"></button>
+        <span class="comp-name">${c?c.nombre:it.id}</span>
+        <span class="comp-price">${money(cost)}</span>
+      </div>
+      <div class="qty-row">
+        <span class="qty-label">Cantidad</span>
+        <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
+        <span class="qty-val">${it.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const used=new Set(S.items.map(x=>x.id));
+  const addable=CATALOG.filter(c=>!isLodging(c.id)&&!AUTO_IDS.includes(c.id)&&!used.has(c.id));
+  $('addList').innerHTML=addable.length
+    ? addable.map(c=>`<button class="add-item" onclick="addComp('${c.id}')">
+        <span>${c.nombre}</span><small>${money(c.costos[S.people-1])}</small>
+      </button>`).join('')
+    : '<div style="padding:14px;color:var(--muted);font-size:14px;">Todos los componentes ya están incluidos.</div>';
+}
+
+function toggleComp(i){ S.items[i].on=!S.items[i].on; renderComps(); recalcSticky(); }
+function changeQty(i,d){
+  S.items[i].qty=Math.max(0,S.items[i].qty+d);
+  if(S.items[i].qty===0) S.items[i].on=false;
+  renderComps(); recalcSticky();
+}
+function toggleAddList(){ $('addList').classList.toggle('open'); }
+function addComp(id){ S.items.push({id,qty:1,on:true}); $('addList').classList.remove('open'); renderComps(); recalcSticky(); }
+
+function calcPrices(){
+  let cost=0;
+  S.items.filter(x=>x.on&&x.qty>0).forEach(it=>{ const c=cat(it.id); if(c) cost+=c.costos[S.people-1]*it.qty; });
+  const cont=S.cont/100, margin=S.margin/100;
+  const contVal=cost*cont, costCont=cost+contVal, suggested=costCont/(1-margin);
+  return {cost,contVal,costCont,suggested};
+}
+function recalcSticky(){
+  const {suggested}=calcPrices();
+  $('stickyVal').textContent=money(suggested);
+  $('stickyPP').textContent=money(suggested/S.people)+' por persona';
+}
+
+function goStep3(){
+  S.cont=Number($('contInput').value)||5;
+  S.margin=Number($('marginInput').value)||30;
+  const {cost,contVal,costCont,suggested}=calcPrices();
+  const final=Math.round(suggested);
+  S.finalPrice=final;
+  $('phVal').textContent=money(suggested);
+  $('phPP').textContent=money(suggested/S.people)+' por persona';
+  $('finalPriceInput').value=final;
+  $('finalPP').textContent=money(final/S.people)+' por persona';
+  $('dCosto').textContent=money(cost);
+  $('dCont').textContent=money(contVal)+' ('+S.cont+'%)';
+  $('dCostoCont').textContent=money(costCont);
+  $('dSugerido').textContent=money(suggested);
+  buildWA();
+  show('sStep3');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PASO 3
+// ═══════════════════════════════════════════════════════════════════
+function recalc(){
+  S.cont=Number($('contInput').value)||5;
+  S.margin=Number($('marginInput').value)||30;
+  const {cost,contVal,costCont,suggested}=calcPrices();
+  $('phVal').textContent=money(suggested);
+  $('phPP').textContent=money(suggested/S.people)+' por persona';
+  $('dCosto').textContent=money(cost);
+  $('dCont').textContent=money(contVal)+' ('+S.cont+'%)';
+  $('dCostoCont').textContent=money(costCont);
+  $('dSugerido').textContent=money(suggested);
+  if(!$('finalPriceInput').value){ $('finalPriceInput').value=Math.round(suggested); onFinalChange(); }
+}
+
+function toggleDetails(){
+  const b=$('detBody'); b.classList.toggle('open');
+  $('detArrow').textContent=b.classList.contains('open')?'▼':'▶';
+}
+
+function onFinalChange(){
+  const v=Number($('finalPriceInput').value)||0;
+  S.finalPrice=v;
+  $('finalPP').textContent=money(v/S.people)+' por persona';
+  buildWA();
+}
+
+function buildWA(){
+  const pkg=PACKAGES.find(p=>p.id===S.pkgId);
+  const final=S.finalPrice||Number($('finalPriceInput').value)||0;
+  const included=S.items.filter(x=>x.on&&x.qty>0);
+  const lodging=included.find(x=>isLodging(x.id));
+  const nights=lodging?lodging.qty:(pkg?.noches||'Personalizado');
+  const ref=$('refInput').value||'Sin referencia';
+  const lines=included.map(x=>{const fn=COMMERCIAL[x.id]; return'- '+(fn?fn(x.qty):(cat(x.id)?.nombre||x.id));});
+  if(lodging){
+    lines.push('- Traslados de llegada y salida entre El Castillo y La Mariola');
+    lines.push('- Botas de hule durante la estancia');
+    lines.push('- Agua potable disponible en la cabaña');
+  }
+  const ids=new Set(included.map(x=>x.id));
+  const acc=[];
+  if(['ACT-01','ACT-02','ACT-06','EXT-01','EXT-02'].some(id=>ids.has(id))) acc.push('- Guía local en español durante las actividades incluidas.');
+  if(['ACT-04','ACT-05'].some(id=>ids.has(id))) acc.push('- Guía bilingüe en los recorridos en bote motor o caimanes.');
+  if(ids.has('ACT-03')) acc.push('- Acompañamiento local en el recorrido en canoa.');
+  const accTxt=acc.length?'\n\n🧭 Acompañamiento:\n'+acc.join('\n'):'';
+  $('waText').value=
+    `🌿 Te comparto la cotización ajustada\n\nEstancia: ${pkg?.nombre||'Paquete personalizado'}\n\n`+
+    `👤 Nombre: ${ref}\n👥 Personas: ${S.people}\n🌙 Número de noches: ${nights}\n`+
+    `💰 Precio total: ${money(final)}\n💵 Precio por persona: ${money(final/S.people)}\n\n`+
+    `✅ Incluye:\n${lines.join('\n')}${accTxt}\n\n`+
+    `ℹ️ Las actividades adicionales se cotizan por separado.\n\n`+
+    `💬 Cualquier duda o ajuste que necesités, estamos a la orden.`;
+}
+
+async function copyWA(){
+  try{ await navigator.clipboard.writeText($('waText').value); }
+  catch{ $('waText').select(); document.execCommand('copy'); }
+  showStatus('✅ Texto copiado — pegalo en WhatsApp Business','success');
+}
+
+async function doSave(){
+  const btn=$('saveBtn'); btn.disabled=true; btn.textContent='⏳ Guardando...';
+  const pkg=PACKAGES.find(p=>p.id===S.pkgId);
+  const {cost,contVal,costCont,suggested}=calcPrices();
+  const final=S.finalPrice||suggested;
+  const lodging=S.items.find(x=>x.on&&isLodging(x.id));
+  const quote={
+    id:S.editingId, referencia:$('refInput').value||'Sin referencia',
+    personas:S.people, noches:lodging?.qty||pkg?.noches||0,
+    alojamiento:'con', paqueteBase:S.pkgId, componentes:S.items,
+    costoReal:cost, contingencia:S.cont, costoConContingencia:costCont,
+    margen:S.margin, precioSugerido:suggested, precioFinal:final,
+    precioPorPersona:final/S.people, notas:$('notesInput').value,
+  };
+  try{
+    const res=await callBE('saveQuote',quote);
+    S.editingId=res?.id||S.editingId;
+    $('editBanner').classList.remove('hide');
+    $('editBanner').textContent=`${res?.updated?'Actualizada':'Guardada'}${res?.id?' · '+res.id:''} · v${res?.version||1}`;
+    $('saveBtn').textContent='💾 Guardar cambios';
+    showStatus('✅ Cotización guardada','success');
+    refreshHistory();
+  }catch(e){
+    showStatus('❌ Error: '+(e?.message||e),'error');
+  }finally{
+    btn.disabled=false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// HISTORIAL
+// ═══════════════════════════════════════════════════════════════════
+function mapHistory(rows){
+  return rows.map(r=>{
+    let items=[];
+    try{items=JSON.parse(r.Componentes_json||'[]');}catch{}
+    const pkg=PACKAGES.find(p=>p.id===String(r.Paquete_base||''));
+    return{
+      id:r.CotizacionID, ref:r.Referencia, date:r.Fecha_creacion,
+      editedDate:r.Fecha_ultima_edicion, version:Number(r.Version)||1,
+      people:Number(r.Personas), nights:Number(r.Noches),
+      packageId:r.Paquete_base, packageName:pkg?.nombre||r.Paquete_base,
+      items, cont:Number(r.Contingencia), margin:Number(r.Margen),
+      final:Number(r.Precio_final), notes:r.Notas||'',
+    };
+  }).reverse();
+}
+
+function renderHist(){
+  const q=($('histSearch')?.value||'').toLowerCase();
+  const list=S.history.filter(h=>!q||(h.ref||'').toLowerCase().includes(q)||(h.packageName||'').toLowerCase().includes(q));
+  if(!list.length){
+    $('histList').innerHTML=`<p style="color:var(--muted);font-size:14px;padding:20px 0;text-align:center">${S.history.length?'Sin resultados.':'No hay cotizaciones guardadas aún.'}</p>`;
+    return;
+  }
+  $('histList').innerHTML=list.map(h=>`
+    <div class="hist-card" onclick='openQuote(${JSON.stringify(h)})'>
+      <div class="hist-info">
+        <div class="hist-ref">${esc(h.ref)}</div>
+        <div class="hist-meta">
+          ${esc(h.packageName)} · ${h.people} ${h.people===1?'persona':'personas'}<br>
+          ${h.date?new Date(h.date).toLocaleDateString('es-NI'):''} · v${h.version}
+        </div>
+      </div>
+      <div class="hist-price">${money(h.final)}</div>
+      <div class="hist-arr">›</div>
+    </div>`).join('');
+}
+
+function openQuote(q){
+  S.editingId=q.id; S.people=q.people;
+  S.pkgId=PACKAGES.some(p=>p.id===q.packageId)?q.packageId:'PERSONALIZADO';
+  let items=(q.items||[]).filter(x=>!AUTO_IDS.includes(x.id||x.ID));
+  // normalizar alojamiento duplicado
+  const lodgingItems=items.filter(x=>isLodging(x.id||x.ID||''));
+  if(lodgingItems.length>1){
+    const maxQty=Math.max(...lodgingItems.map(x=>Number(x.qty||x.Cantidad||0)));
+    const keep={...lodgingItems[0], qty:maxQty};
+    items=[keep,...items.filter(x=>!isLodging(x.id||x.ID||''))];
+  }
+  if(!items.some(x=>isLodging(x.id||x.ID||'')))
+    items.unshift({id:S.people>=3?'ALOJ-03':'ALOJ-01',qty:q.nights||1,on:true});
+  S.items=items.map(x=>({
+    id:x.id||x.ID||'',
+    qty:Number(x.qty||x.Cantidad||0),
+    on:x.on!==false&&String(x.Incluido||'').toLowerCase()!=='no',
+  }));
+  S.accomId=S.items.find(x=>isLodging(x.id))?.id||'ALOJ-01';
+  S.cont=q.cont||5; S.margin=q.margin||30;
+  $('refInput').value=q.ref||''; $('notesInput').value=q.notes||'';
+  $('contInput').value=S.cont; $('marginInput').value=S.margin;
+  updatePeopleUI(); renderPkgGrid(); updateAccomUI();
+  $('s2title').textContent=PACKAGES.find(p=>p.id===S.pkgId)?.nombre||'Componentes';
+  renderComps(); recalcSticky();
+  S.finalPrice=q.final;
+  $('finalPriceInput').value=q.final;
+  $('saveBtn').textContent='💾 Guardar cambios';
+  $('editBanner').classList.remove('hide');
+  $('editBanner').textContent=`Editando: ${q.id} · v${q.version}`;
+  goStep3();
+}
+</script>
+</body>
+</html>
