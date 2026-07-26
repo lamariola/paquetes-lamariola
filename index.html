@@ -636,20 +636,29 @@ function calcPrices(){
   const contVal=cost*cont, costCont=cost+contVal, suggested=costCont/(1-margin);
   return {cost,contVal,costCont,suggested};
 }
+
+function readPercent(id,fallback,max){
+  const raw=$(id).value.trim();
+  if(raw==='') return fallback;
+  const value=Number(raw);
+  return Number.isFinite(value) ? Math.min(max,Math.max(0,value)) : fallback;
+}
+
 function recalcSticky(){
   const {suggested}=calcPrices();
-  $('stickyVal').textContent=money(suggested);
-  $('stickyPP').textContent=money(suggested/S.people)+' por persona';
+  const roundedTotal=Math.round(suggested);
+  $('stickyVal').textContent=money(roundedTotal);
+  $('stickyPP').textContent=money(roundedTotal/S.people)+' por persona';
 }
 
 function goStep3(){
-  S.cont=Number($('contInput').value)||5;
-  S.margin=Number($('marginInput').value)||30;
+  S.cont=readPercent('contInput',5,50);
+  S.margin=readPercent('marginInput',30,90);
   const {cost,contVal,costCont,suggested}=calcPrices();
   const final=Math.round(suggested);
   S.finalPrice=final;
-  $('phVal').textContent=money(suggested);
-  $('phPP').textContent=money(suggested/S.people)+' por persona';
+  $('phVal').textContent=money(final);
+  $('phPP').textContent=money(final/S.people)+' por persona';
   $('finalPriceInput').value=final;
   $('finalPP').textContent=money(final/S.people)+' por persona';
   $('dCosto').textContent=money(cost);
@@ -664,11 +673,12 @@ function goStep3(){
 // PASO 3
 // ═══════════════════════════════════════════════════════════════════
 function recalc(){
-  S.cont=Number($('contInput').value)||5;
-  S.margin=Number($('marginInput').value)||30;
+  S.cont=readPercent('contInput',5,50);
+  S.margin=readPercent('marginInput',30,90);
   const {cost,contVal,costCont,suggested}=calcPrices();
-  $('phVal').textContent=money(suggested);
-  $('phPP').textContent=money(suggested/S.people)+' por persona';
+  const roundedTotal=Math.round(suggested);
+  $('phVal').textContent=money(roundedTotal);
+  $('phPP').textContent=money(roundedTotal/S.people)+' por persona';
   $('dCosto').textContent=money(cost);
   $('dCont').textContent=money(contVal)+' ('+S.cont+'%)';
   $('dCostoCont').textContent=money(costCont);
